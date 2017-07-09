@@ -12,24 +12,5 @@
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 %% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
--module(mnesiakv_app).
-
--behaviour(application).
-
-%% Application callbacks
--export([start/2, stop/1]).
-
-%%====================================================================
-%% API
-%%====================================================================
-
-start(_StartType, _StartArgs) ->
-    mnesiakv_sup:start_link().
-
-%%--------------------------------------------------------------------
-stop(_State) ->
-    ok.
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
+-record(document, {key::string(),
+                value::any()}).

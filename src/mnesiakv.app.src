@@ -1,5 +1,5 @@
 {application, mnesiakv,
- [{description, "An OTP application"},
+ [{description, "MnesiaKV is an OTP application which offers an api to use mnesia as a key value store."},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, { mnesiakv_app, []}},
