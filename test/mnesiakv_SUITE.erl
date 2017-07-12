@@ -92,7 +92,7 @@ get_document(_Config) ->
 %% Get document that is not available
 get_unavailable_document(_Config) ->
   %% Test returns undefined if id is not found
-  {ResponseCode, _Id} = mnesiakv:get("some_id"),
+  {ResponseCode, _Doc} = mnesiakv:get("some_id"),
   ?assertEqual(undefined, ResponseCode).
 
 %% @doc Test retrieving documents by criteria

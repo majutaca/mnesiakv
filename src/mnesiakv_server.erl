@@ -40,7 +40,18 @@ handle_call({add, #{key:= Key, value := Value}}, _From, State) ->
     mnesia:write(#document{key=Key, value=Value, rev=Rev})
   end,
   Result = mnesia:activity(transaction, F),
-  {reply, {Result, #{key=> Key, value => Value, rev=>Rev}}, State}.
+  {reply, {Result, #{key=> Key, value => Value, rev=>Rev}}, State};
+handle_call({get, ID}, _From, State) ->
+  F = fun() ->
+    case mnesia:read({document, ID}) of
+            [#document{key=Key, rev=Rev, value=Value}] ->
+                {ok, #{key=>Key, rev=>Rev, value=>Value}};
+            [] ->
+                {undefined, #{}}
+        end
+    end,
+    Result = mnesia:activity(transaction, F),
+    {reply, Result, State}.
 
 
 handle_cast(_Req, State) ->

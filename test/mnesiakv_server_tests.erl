@@ -32,6 +32,8 @@ mnesiakv_server_test_() ->
     {foreach, fun setup/0, fun cleanup/1, [
         fun server_is_alive/1,
         fun add_document/1,
+        fun get_document/1,
+        fun delete_document/1,
         fun generate_id/1
     ]}.
 
@@ -58,8 +60,83 @@ add_document(_Pid) ->
     ?assertEqual(Key, Key2),
 
     %% Test revision number add
-    ?assert([] =/= Rev)
+    ?assert([] =/= Rev),
+
+    meck:unload(mnesia)
   end.
+
+get_document(_Pid) ->
+  fun() ->
+
+    Key = "test2330l",
+    Rev = "847566eryhjdyhdye7747",
+    Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
+    %%Document = #{key=>Key, rev=>Rev, value=>Person},
+
+    meck:new(mnesia,[non_strict]),
+    meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
+    meck:expect(mnesia, read, fun({document, ID}) ->
+      case ID of
+        Key ->
+          [#document{key=Key, rev=Rev, value=Person}];
+        _ ->
+          []
+        end
+    end),
+
+    {Result, Document} = gen_server:call(mnesiakv_server, {get, Key}),
+    ?assertEqual(ok, Result),
+
+    #{key := Key2, rev := Rev2, value := Person2} = Document,
+
+    %% Test Returning correct values
+    ?assertEqual(Person, Person2),
+    ?assertEqual(Key, Key2),
+    ?assertEqual(Rev, Rev2),
+
+    {Result2, Document2} = gen_server:call(mnesiakv_server, {get, "SomeKey"}),
+    ?assertEqual(undefined, Result2),
+    ?assertEqual(#{}, Document2),
+
+    meck:unload(mnesia)
+  end.
+
+delete_document(_Pid) ->
+  fun() ->
+
+    Key = "test2330l",
+    Rev = "847566eryhjdyhdye7747",
+    Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
+    %%Document = #{key=>Key, rev=>Rev, value=>Person},
+
+    meck:new(mnesia,[non_strict]),
+    meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
+    meck:expect(mnesia, read, fun({document, ID}) ->
+      case ID of
+        Key ->
+          [#document{key=Key, rev=Rev, value=Person}];
+        _ ->
+          []
+        end
+    end),
+
+    {Result, Document} = gen_server:call(mnesiakv_server, {get, Key}),
+    ?assertEqual(ok, Result),
+
+    #{key := Key2, rev := Rev2, value := Person2} = Document,
+
+    %% Test Returning correct values
+    ?assertEqual(Person, Person2),
+    ?assertEqual(Key, Key2),
+    ?assertEqual(Rev, Rev2),
+
+    {Result2, Document2} = gen_server:call(mnesiakv_server, {get, "SomeKey"}),
+    ?assertEqual(undefined, Result2),
+    ?assertEqual(#{}, Document2),
+
+    meck:unload(mnesia)
+  end.
+
 
 generate_id(_Pid) ->
   fun() ->
