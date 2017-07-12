@@ -14,9 +14,25 @@
 
 -module(mnesiakv).
 
--export([generate_id/0]).
+-export([install/1, generate_id/0, add/1]).
+
+-include("document.hrl").
+
+install(Nodes) ->
+    mnesia:create_schema(Nodes),
+    rpc:multicall(Nodes, application, start, [mnesia]),
+    mnesia:create_table(document,
+                        [{attributes, record_info(fields, document)},
+                         {disc_copies, Nodes}]),
+    rpc:multicall(Nodes, application, stop, [mnesia]).
+
 
 %% @doc Function for generating unique document IDs
+-spec generate_id() -> string().
 generate_id() ->
-  {{Year, Month, Day}, {Hour, Minute, Second}} = calendar:now_to_datetime(os:timestamp()),
-  lists:flatten(io_lib:format("~4..0w-~2..0w-~2..0wT~2..0w:~2..0w:~2..0w",[Year,Month,Day,Hour,Minute,Second])).
+  gen_server:call(mnesiakv_server, generate_id).
+
+%% @doc Function for creating new documents
+-spec add(map()) -> {atom(), map()}.
+add(Document) ->
+  gen_server:call(mnesiakv_server, {add, Document}).

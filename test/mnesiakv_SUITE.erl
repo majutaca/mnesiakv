@@ -20,9 +20,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -compile(export_all).
 
-all() -> [add_category, delete_category,get_category,list_categories,
-          add_provider, delete_provider, get_provider, list_providers,
-          add_article, list_articles, get_article].
+all() -> [add_document, add_duplicate_document,get_document,get_unavailable_document,
+          get_document_by_criteria, update_document, update_document_wrong_rev,
+          delete_document, delete_unavailable_document, generate_id].
 
 init_per_suite(Config) ->
   Priv = ?config(priv_dir, Config),
@@ -49,37 +49,44 @@ end_per_testcase(_, _Config) ->
 
 %% @doc Test saving a new document
 add_document(_Config) ->
-  Person = #{key=> "test2330l", value=>#{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1}},
-  {ResponseCode, Document} = mnesiakv:add(Person),
+  Key = "test2330l",
+  Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
+  {ResponseCode, Document} = mnesiakv:add(#{key=> Key, value=>Person}),
 
   ?assertEqual(ok, ResponseCode),
 
-  Person2 = map:find(value, Document),
+  #{key := Key2, rev := Rev, value := Person2} = Document,
+
   %% Test Returning correct values
-  {ok, Name} = map:find("name", Person2),
-  {ok, Age} = map:find("age", Person2),
-  ?assertEqual("Dashiell", Name),
-  ?assertEqual(1, Age),
+  ?assertEqual(Person, Person2),
+  ?assertEqual(Key, Key2),
 
   %% Test revision number add
-  {ok, Revision} = map:find("rev", Person2),
-  ?assert([] =/= Revision).
+  ?assert([] =/= Rev).
 
 add_duplicate_document(_Config) ->
-  Person = #{key=> "test01", value=>#{"name"=>"Vicky", "surname"=>"Majuta", "age"=>1}},
-  {ResponseCode, Person} = mnesiakv:add(Person),
+  Document = #{key=> "test01", value=>#{"name"=>"Vicky", "surname"=>"Majuta", "age"=>25}},
+  Document2 = #{key=> "test01", value=>#{"name"=>"Chris", "surname"=>"Majuta", "age"=>30}},
+  {ok, _} = mnesiakv:add(Document),
+  {ResponseCode, _} = mnesiakv:add(Document2),
   ?assertEqual(error, ResponseCode).
 
 %% @doc Test retrieving a document by id
 get_document(_Config) ->
   %%Gets result if id is found
+  Key = "test01",
   {ResponseCode, Document} = mnesiakv:get("test01"),
   ?assertEqual(ok, ResponseCode),
 
-  {ok, Person} = map:find(value, Document),
-  ?assert(#{} =/= Person),
+  #{key := Key1, rev := Rev , value := Person} = Document,
 
-  {ok, Name} = map:find("name", Person),
+  %% Test retreived correct key
+  ?assertEqual(Key, Key1),
+
+  %% Test revision number is present
+  ?assert([] =/= Rev),
+
+  #{"name" := Name,"surname" := _Surname, "age" := _Age} = Person,
   ?assertEqual("Vicky", Name).
 
 %% Get document that is not available

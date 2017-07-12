@@ -37,7 +37,13 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    {ok, { {one_for_all, 0, 1}, []} }.
+  {ok, {{one_for_one, 1, 3600},
+        [{server,
+         {mnesiakv_server, start_link, []},
+         permanent,
+         500,
+         worker,
+         [mnesiakv_server]}]}}.
 
 %%====================================================================
 %% Internal functions
