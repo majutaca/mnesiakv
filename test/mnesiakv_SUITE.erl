@@ -141,7 +141,7 @@ delete_document(_Config) ->
 
 %% @doc Test deleting a document with no or wrong re
 delete_unavailable_document(_Config) ->
-  {ResponseCode, _} = mnesiakv:delete("test01"),
+  {ResponseCode, _} = mnesiakv:delete("not_id"),
   ?assertEqual(undefined, ResponseCode).
 
 %% @doc Test id generation

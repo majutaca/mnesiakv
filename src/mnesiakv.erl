@@ -14,7 +14,7 @@
 
 -module(mnesiakv).
 
--export([install/1, generate_id/0, add/1, get/1]).
+-export([install/1, generate_id/0, add/1, get/1, delete/1]).
 
 -include("document.hrl").
 
@@ -41,3 +41,8 @@ add(Document) ->
 -spec get(string()) -> {atom(), map()}.
 get(ID) ->
   gen_server:call(mnesiakv_server, {get, ID}).
+
+%% @doc Function for deleting a document by id
+-spec delete(string()) -> {atom(), map()}.
+delete(ID) ->
+  gen_server:call(mnesiakv_server, {delete, ID}).

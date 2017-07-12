@@ -107,7 +107,6 @@ delete_document(_Pid) ->
     Key = "test2330l",
     Rev = "847566eryhjdyhdye7747",
     Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
-    %%Document = #{key=>Key, rev=>Rev, value=>Person},
 
     meck:new(mnesia,[non_strict]),
     meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
@@ -119,21 +118,14 @@ delete_document(_Pid) ->
           []
         end
     end),
+    meck:expect(mnesia, delete, fun({document, _ID}) -> ok end),
 
-    {Result, Document} = gen_server:call(mnesiakv_server, {get, Key}),
+    {Result, _Document} = gen_server:call(mnesiakv_server, {delete, Key}),
     ?assertEqual(ok, Result),
 
-    #{key := Key2, rev := Rev2, value := Person2} = Document,
-
-    %% Test Returning correct values
-    ?assertEqual(Person, Person2),
-    ?assertEqual(Key, Key2),
-    ?assertEqual(Rev, Rev2),
-
-    {Result2, Document2} = gen_server:call(mnesiakv_server, {get, "SomeKey"}),
+    {Result2, _Document2} = gen_server:call(mnesiakv_server, {delete, "SomeKey"}),
     ?assertEqual(undefined, Result2),
-    ?assertEqual(#{}, Document2),
-
+    
     meck:unload(mnesia)
   end.
 

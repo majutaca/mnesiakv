@@ -51,7 +51,19 @@ handle_call({get, ID}, _From, State) ->
         end
     end,
     Result = mnesia:activity(transaction, F),
-    {reply, Result, State}.
+    {reply, Result, State};
+  handle_call({delete, ID}, _From, State) ->
+    F = fun() ->
+    case mnesia:read({document, ID}) =:= [] of
+      true ->
+        {undefined, #{}};
+      false ->
+        Response = mnesia:delete({document, ID}),
+        {Response, #{}}
+    end
+  end,
+  Result = mnesia:activity(transaction, F),
+  {reply, Result, State}.
 
 
 handle_cast(_Req, State) ->
