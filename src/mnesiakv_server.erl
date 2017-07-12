@@ -41,6 +41,24 @@ handle_call({add, #{key:= Key, value := Value}}, _From, State) ->
   end,
   Result = mnesia:activity(transaction, F),
   {reply, {Result, #{key=> Key, value => Value, rev=>Rev}}, State};
+handle_call({update, #{key:= ID, value := Value, rev := Rev}}, _From, State) ->
+  F = fun() ->
+    case mnesia:read({document, ID}) of
+      [#document{key=Key, rev=OldRev, value=_Value}] ->
+        if
+          Rev =/= OldRev ->
+            {optimistic_lock, #{}};
+          true ->
+            NewRev = generate_rev(),
+            Response = mnesia:write(#document{key=Key, value=Value, rev=NewRev}),
+            {Response, #{key=>Key, value=>Value, rev=>NewRev}}
+          end;
+      [] ->
+        {undefined, #{}}
+    end
+  end,
+  Result = mnesia:activity(transaction, F),
+  {reply, Result, State};
 handle_call({get, ID}, _From, State) ->
   F = fun() ->
     case mnesia:read({document, ID}) of

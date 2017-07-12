@@ -34,6 +34,7 @@ mnesiakv_server_test_() ->
         fun add_document/1,
         fun get_document/1,
         fun delete_document/1,
+        fun update_document/1,
         fun generate_id/1
     ]}.
 
@@ -45,7 +46,8 @@ server_is_alive(Pid) ->
 add_document(_Pid) ->
   fun() ->
     meck:new(mnesia,[non_strict]),
-    meck:expect(mnesia, activity, fun(transaction, _F) -> ok end),
+    meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
+    meck:expect(mnesia, write, fun(#document{}) -> ok end),
 
     Key = "test2330l",
     Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
@@ -125,10 +127,40 @@ delete_document(_Pid) ->
 
     {Result2, _Document2} = gen_server:call(mnesiakv_server, {delete, "SomeKey"}),
     ?assertEqual(undefined, Result2),
-    
+
     meck:unload(mnesia)
   end.
 
+update_document(_Pid) ->
+  fun() ->
+
+    Key = "test2330l",
+    Rev = "847566eryhjdyhdye7747",
+    Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},
+
+    meck:new(mnesia,[non_strict]),
+    meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
+    meck:expect(mnesia, read, fun({document, ID}) ->
+      case ID of
+        Key ->
+          [#document{key=Key, rev=Rev, value=Person}];
+        _ ->
+          []
+        end
+    end),
+    meck:expect(mnesia, write, fun(#document{}) -> ok end),
+
+    Person2 = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>21},
+    {Result, _Document} = gen_server:call(mnesiakv_server, {update, #{key=>Key,
+        rev=>Rev, value=>Person2}}),
+    ?assertEqual(ok, Result),
+
+    {Result2, _Document2} = gen_server:call(mnesiakv_server, {update,
+        #{key=>"SomeKey", rev=>Rev, value=>Person2}}),
+    ?assertEqual(undefined, Result2),
+
+    meck:unload(mnesia)
+  end.
 
 generate_id(_Pid) ->
   fun() ->

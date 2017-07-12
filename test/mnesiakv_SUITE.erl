@@ -104,29 +104,24 @@ update_document(_Config) ->
   {ResponseCode, Document} = mnesiakv:get("test01"),
   ?assertEqual(ok, ResponseCode),
 
-  {ok, Person} = map:find(value, Document),
-  ?assert(#{} =/= Person),
+  #{key := Key, rev := Rev , value := Person} = Document,
 
   Person2 = maps:update("age",25,Person),
   Document2 = maps:update(value, Person2, Document),
-  {ResponseCode, Document3} = mnesiakv:update(Document2),
+  {ResponseCode, _} = mnesiakv:update(Document2),
   ?assertEqual(ok, ResponseCode),
 
-  {ok, Person3} = map:find(value, Document3),
-  {ok, Name} = map:find("name", Person3),
+  {_, Document3} = mnesiakv:get("test01"),
+  #{key := Key3, rev := Rev3 , value := Person3} = Document3,
+  #{"name" := Name,"surname" := _Surname, "age" := Age} = Person3,
   ?assertEqual("Vicky", Name), %% Name has not changed
-
-  {ok, Age} = map:find("age", Person3),
-  ?assertEqual(25, Age),
-
-  %% Assert Revision has changed
-  {ok, Rev1} = map:find("name", Person),
-  {ok, Rev2} = map:find("name", Person3),
-  ?assert(Rev1 =/= Rev2).
+  ?assertEqual(Key, Key3), %% Key has not changed
+  ?assertEqual(25, Age), %% Age has changed
+  ?assert(Rev =/= Rev3).
 
 %% @doc Test updating a document with no or wrong revision
 update_document_wrong_rev(_Config) ->
-  Document = #{key=> "test01", value=>#{"name"=>"Chris", "surname"=>"Majuta", "age"=>1}},
+  Document = #{key=> "test01", value=>#{"name"=>"Chris", "surname"=>"Majuta", "age"=>1}, rev=>"SomeRev"},
   {ResponseCode, _Document} = mnesiakv:update(Document),
   ?assertEqual(optimistic_lock, ResponseCode).
 
