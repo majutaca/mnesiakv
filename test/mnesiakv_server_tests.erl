@@ -48,6 +48,7 @@ add_document(_Pid) ->
     meck:new(mnesia,[non_strict]),
     meck:expect(mnesia, activity, fun(transaction, F) -> F() end),
     meck:expect(mnesia, write, fun(#document{}) -> ok end),
+    meck:expect(mnesia, read, fun({document, _ID}) -> [] end),
 
     Key = "test2330l",
     Person = #{"name"=>"Dashiell", "surname"=>"Majuta", "age"=>1},

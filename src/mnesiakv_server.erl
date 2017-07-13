@@ -35,12 +35,18 @@ init([]) ->
 handle_call(generate_id, _From, State) ->
   {reply, generate_id(), State};
 handle_call({add, #{key:= Key, value := Value}}, _From, State) ->
-  Rev = generate_rev(),
   F = fun() ->
-    mnesia:write(#document{key=Key, value=Value, rev=Rev})
+    case mnesia:read({document, Key}) =:= [] of
+      true ->
+        Rev = generate_rev(),
+        Response = mnesia:write(#document{key=Key, value=Value, rev=Rev}),
+        {Response, #{key=> Key, value => Value, rev=>Rev}};
+      false ->
+        {exists, #{}}
+    end
   end,
   Result = mnesia:activity(transaction, F),
-  {reply, {Result, #{key=> Key, value => Value, rev=>Rev}}, State};
+  {reply, Result, State};
 handle_call({update, #{key:= ID, value := Value, rev := Rev}}, _From, State) ->
   F = fun() ->
     case mnesia:read({document, ID}) of
@@ -72,14 +78,14 @@ handle_call({get, ID}, _From, State) ->
     {reply, Result, State};
   handle_call({delete, ID}, _From, State) ->
     F = fun() ->
-    case mnesia:read({document, ID}) =:= [] of
-      true ->
-        {undefined, #{}};
-      false ->
-        Response = mnesia:delete({document, ID}),
-        {Response, #{}}
-    end
-  end,
+      case mnesia:read({document, ID}) =:= [] of
+        true ->
+          {undefined, #{}};
+        false ->
+          Response = mnesia:delete({document, ID}),
+          {Response, #{}}
+      end
+    end,
   Result = mnesia:activity(transaction, F),
   {reply, Result, State}.
 

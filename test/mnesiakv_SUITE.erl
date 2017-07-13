@@ -65,11 +65,9 @@ add_document(_Config) ->
   ?assert([] =/= Rev).
 
 add_duplicate_document(_Config) ->
-  Document = #{key=> "test01", value=>#{"name"=>"Vicky", "surname"=>"Majuta", "age"=>25}},
-  Document2 = #{key=> "test01", value=>#{"name"=>"Chris", "surname"=>"Majuta", "age"=>30}},
-  {ok, _} = mnesiakv:add(Document),
-  {ResponseCode, _} = mnesiakv:add(Document2),
-  ?assertEqual(error, ResponseCode).
+  Document = #{key=> "test01", value=>#{"name"=>"Chris", "surname"=>"Majuta", "age"=>30}},
+  {ResponseCode, _} = mnesiakv:add(Document),
+  ?assertEqual(exists, ResponseCode).
 
 %% @doc Test retrieving a document by id
 get_document(_Config) ->
